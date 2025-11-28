@@ -31,7 +31,7 @@ global:
     health_port: 0
 
 graphql:
-    port: 3001 # 確保這裡跟 Zeabur 的 PORT 環境變數一致
+    port: 8080 # 確保這裡跟 Zeabur 的 PORT 環境變數一致
     cors:
         enabled: true
         origins: "https://neon-marketplace.zeabur.app" # 設定為你的前端應用程式的 URL
