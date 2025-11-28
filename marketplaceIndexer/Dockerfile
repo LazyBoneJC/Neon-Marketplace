@@ -8,6 +8,7 @@ WORKDIR /app
 COPY rindexer.yaml .
 COPY abis ./abis
 
+ENV HOST=0.0.0.0
 EXPOSE 8080
 
 # 4. 重設 ENTRYPOINT (避免繼承干擾)
