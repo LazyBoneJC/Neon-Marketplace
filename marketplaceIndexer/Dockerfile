@@ -9,7 +9,8 @@ COPY rindexer.yaml .
 COPY abis ./abis
 
 ENV HOST=0.0.0.0
-EXPOSE 8080
+ENV PORT=3001
+EXPOSE 3001
 
 # 4. 重設 ENTRYPOINT (避免繼承干擾)
 ENTRYPOINT []
