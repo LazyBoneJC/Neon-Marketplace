@@ -26,8 +26,8 @@ export default function Header() {
                         <Image
                             // 加入 group-hover 發光效果
                             className="image-glow transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]"
-                            src="/neonswap.png"
-                            alt="Neonswap Logo"
+                            src="/neon.png"
+                            alt="Neon Logo"
                             width={36}
                             height={36}
                         />
