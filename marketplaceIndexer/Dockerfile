@@ -16,10 +16,10 @@ COPY rindexer.yaml .
 COPY abis ./abis
 
 ENV HOST=0.0.0.0
-ENV PORT=3001
+ENV PORT=8080
 
 # 5. Entrypoint 設定
 ENTRYPOINT []
 
 # 6. 啟動指令 (使用 shell form 以讀取環境變數)
-CMD ["sh", "-c", "/app/rindexer start all --port $PORT"]
+CMD ["/app/rindexer", "start", "all", "--port", "8080"]
