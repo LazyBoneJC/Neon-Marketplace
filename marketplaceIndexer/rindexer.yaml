@@ -29,5 +29,6 @@ contracts:
 
 global:
     health_port: 0
-# graphql:
-#     port: ${PORT}
+
+graphql:
+    port: ${PORT}
