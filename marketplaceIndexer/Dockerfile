@@ -15,6 +15,9 @@ WORKDIR /app
 COPY rindexer.yaml .
 COPY abis ./abis
 
+ENV HOST=0.0.0.0
+ENV PORT=3001
+
 # 5. Entrypoint 設定
 ENTRYPOINT []
 
