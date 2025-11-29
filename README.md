@@ -14,7 +14,7 @@
       Built with Next.js, Solidity, Foundry, and rindexer.
    </p>
    <p align="center"\>
-     <a href="https://neon-marketplace.vercel.app/">Ckick here to use Neon Marketplace</a>
+     <a href="https://neon-marketplace.zeabur.app/">Ckick here to use Neon Marketplace</a>
    </p>
 </div>
 
@@ -29,13 +29,13 @@
 
 **Neon Marketplace** is a full-stack decentralized application (DApp) that allows users to mint, list, and buy NFTs with a seamless user experience. Unlike traditional marketplaces, this project integrates a custom indexer for real-time data retrieval and utilizes a modern Web3 stack for high performance.
 
-The platform features specific collections like **Ninja NFT** and **Cake NFT**, demonstrating support for various ERC-721 token standards.
+The platform features specific collections like **Ninja NFT**, demonstrating support for various ERC-721 token standards.
 
 ## ✨ Key Features
 
 - **🛒 NFT Trading:** Buy and sell NFTs securely using smart contracts.
 - **⚡ Real-time Indexing:** Powered by `rindexer` to fetch off-chain events instantly.
-- **🎨 Custom Collections:** Support for specific collections like Ninja NFT & Cake NFT.
+- **🎨 Custom Collections:** Support for specific collections like Ninja NFT.
 - **👛 Wallet Integration:** Seamless connection via RainbowKit & Wagmi.
 - **📱 Responsive Design:** Modern UI built with Tailwind CSS.
 - **🛡️ Compliance Ready:** Integrated compliance checks for safer transactions.
