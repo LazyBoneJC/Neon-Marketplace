@@ -64,7 +64,7 @@ graph TD
         DB[(PostgreSQL)]
     end
 
-    subgraph Blockchain ["⛓️ Blockchain (Sepolia / Anvil)"]
+    subgraph Blockchain ["⛓️ Blockchain (Sepolia)"]
         Marketplace[Marketplace Contract]
         NFT[NFT Collection Contract]
     end
