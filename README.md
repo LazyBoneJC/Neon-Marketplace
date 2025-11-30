@@ -2,7 +2,7 @@
 
 <br />
 <div align="center"\>
-  <a href="https://github.com/LazyBoneJC/PrismDrop">
+  <a href="https://github.com/LazyBoneJC/Neon-Marketplace">
     <img src="./public/Neon-Marketplace-Home.png" alt="Logo" width="800" height="400">
   </a>
 
