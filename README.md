@@ -14,7 +14,7 @@
       Built with Next.js, Solidity, Foundry, and rindexer.
    </p>
    <p align="center"\>
-     <a href="https://neon-marketplace.zeabur.app/">Ckick here to use Neon Marketplace</a>
+     <a href="https://neon-marketplace.zeabur.app/">Click here to use Neon Marketplace</a>
    </p>
 </div>
 
@@ -39,6 +39,117 @@ The platform features specific collections like **Ninja NFT**, demonstrating sup
 - **👛 Wallet Integration:** Seamless connection via RainbowKit & Wagmi.
 - **📱 Responsive Design:** Modern UI built with Tailwind CSS.
 - **🛡️ Compliance Ready:** Integrated compliance checks for safer transactions.
+
+## 🏗️ Architecture
+
+### System Architecture
+
+The platform bridges on-chain integrity with off-chain performance using a custom indexing layer and secure API routes.
+
+```mermaid
+graph TD
+    subgraph Client Side ["🖥️ Client Side (Next.js 15)"]
+        UI[User Interface]
+        Hooks[Wagmi / Viem Hooks]
+        Query[GraphQL / API Query]
+    end
+
+    subgraph Server Side ["⚙️ Server Side / Backend"]
+        NextAPI[Next.js API Routes]
+        Circle[Circle Compliance API]
+    end
+
+    subgraph Data Layer ["💾 Data Indexing Layer"]
+        Indexer[rindexer]
+        DB[(PostgreSQL)]
+    end
+
+    subgraph Blockchain ["⛓️ Blockchain (Sepolia / Anvil)"]
+        Marketplace[Marketplace Contract]
+        NFT[NFT Collection Contract]
+    end
+
+    %% User Interaction
+    User((User)) -->|Interacts| UI
+
+    %% Frontend Logic
+    UI -->|1. Connect Wallet| Hooks
+    UI -->|2. Compliance Check| NextAPI
+    UI -->|4. Read Data| Query
+
+    %% Backend Logic
+    NextAPI -->|3. Verify Address| Circle
+    Circle -- Responds --> NextAPI
+
+    %% Blockchain Interaction
+    Hooks -->|5. List / Buy / Cancel| Marketplace
+    Marketplace -->|Internal Call| NFT
+
+    %% Indexing Flow
+    Marketplace -.->|Emits Events| Indexer
+    NFT -.->|Emits Events| Indexer
+    Indexer -->|Updates| DB
+
+    %% Data Retrieval
+    Query -->|GraphQL Fetch| Indexer
+    Indexer -.->|Reads| DB
+
+    classDef client fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef server fill:#fff3e0,stroke:#e65100,stroke-width:2px;
+    classDef blockchain fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    classDef data fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px;
+
+    class UI,Hooks,Query client;
+    class NextAPI,Circle server;
+    class Marketplace,NFT blockchain;
+    class Indexer,DB data;
+```
+
+### Core User Flow: Listing an NFT
+
+This flow demonstrates the integration of Compliance Checks before interacting with the blockchain, followed by Asynchronous Indexing for UI updates.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as Frontend (Next.js)
+    participant API as API Route
+    participant Circle as Circle Compliance API
+    participant Chain as Blockchain
+    participant Indexer as rindexer
+    participant DB as PostgreSQL
+
+    User->>FE: Click "List NFT"
+
+    %% Compliance Check
+    rect rgb(255, 240, 240)
+    Note over FE, Circle: 🛡️ Security Check
+    FE->>API: POST /api/compliance (address)
+    API->>Circle: Check Address (Screening)
+    Circle-->>API: Result: Approved/Blocked
+    API-->>FE: { isApproved: true }
+    end
+
+    alt If Approved
+        FE->>Chain: Send Transaction (List Item)
+        Chain-->>FE: Transaction Hash
+
+        par Async Indexing
+            Chain->>Chain: Emit "ItemListed" Event
+            Indexer->>Chain: Listen for Events
+            Indexer->>DB: Insert/Update Listing Data
+        and UI Feedback
+            FE-->>User: Show "Transaction Submitted"
+        end
+
+        Note over FE, DB: ⚡ Real-time Update
+        FE->>Indexer: GraphQL Query (Latest Listings)
+        Indexer-->>FE: Return Updated Data
+        FE-->>User: Update UI List
+    else If Blocked
+        FE-->>User: Show "Compliance Error"
+    end
+```
 
 ## 🛠️ Tech Stack
 
