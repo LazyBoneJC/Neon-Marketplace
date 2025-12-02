@@ -6,6 +6,10 @@ networks:
     - name: sepolia
       chain_id: 11155111
       rpc: ${SEPOLIA_RPC_URL}
+      #   降低輪詢頻率: 'optimized' (自動優化，較省流量)
+      block_poll_frequency: optimized
+      #   限制每次抓取的區塊範圍 (避免一次抓太多導致 Alchemy 報錯)
+      max_block_range: 2000
 
 storage:
     postgres:
