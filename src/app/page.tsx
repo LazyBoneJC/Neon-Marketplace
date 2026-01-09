@@ -4,6 +4,7 @@ import { useAccount } from "wagmi"
 import RecentlyListedNFTs from "@/components/RecentlyListed"
 import { useEffect, useState } from "react"
 import PriceChart from "@/components/PriceChart"
+import MarketAnalyst from "@/components/AI/MarketAnalyst"
 
 // 簡單的圖示組件 (可以換成 lucide-react 的圖示)
 const WalletIcon = () => (
@@ -144,8 +145,9 @@ export default function Home() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* 左邊放圖表，佔據 2/3 寬度 */}
-                            <div className="lg:col-span-2">
+                            <div className="lg:col-span-2 space-y-8">
                                 <PriceChart />
+                                <MarketAnalyst />
                             </div>
 
                             {/* 右邊放統計數據卡片 */}
