@@ -1,4 +1,3 @@
-// import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 const GEN_AI_MODEL = "gemini-2.5-flash-lite"; // Using 1.5 Flash as standard, user mentioned 2.5 but likely meant 1.5 or 2.0
@@ -19,15 +18,11 @@ export async function generateMarketAnalysis(salesData: SalesDataItem[], mock = 
 
   if (!API_KEY) {
     console.error("GEMINI_API_KEY is not set");
-    return "Error: AI Service not configured.";
+    return "AI analysis is currently unavailable.";
   }
 
   try {
-    // We can use the REST API directly to avoid dependencies if preferred, 
-    // but the SDK is robust. Since we haven't installed the SDK yet, 
-    // I will implement a fetch-based fallback or we can install the SDK.
-    // GUIDANCE: For now I will use direct fetch to avoid forcing an npm install content.
-    
+    // Using REST API directly to avoid SDK dependency
     // Extract only relevant fields to minimize token usage
     const summarizedData = salesData.map(({ price, blockTimestamp }) => ({
       price,
