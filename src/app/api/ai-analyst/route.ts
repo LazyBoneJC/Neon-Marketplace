@@ -4,7 +4,7 @@ import { generateMarketAnalysis } from '@/utils/ai-service';
 // Revalidate this route every hour to save costs/tokens (Caching)
 export const revalidate = 3600; 
 
-const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_RINDEXER_URL || 'http://localhost:3001/graphql';
+const GRAPHQL_ENDPOINT = process.env.NEXT_PUBLIC_RINDEXER_URL || 'http://127.0.0.1:3001/graphql';
 
 const RECENT_SALES_QUERY = `
   query GetRecentSales {
@@ -35,6 +35,7 @@ export async function GET() {
 
     // 2. Fetch Data from Rindexer
     let salesData = [];
+    let rindexerFailed = false;
     try {
         const rindexerRes = await fetch(GRAPHQL_ENDPOINT, {
             method: 'POST',
@@ -45,13 +46,14 @@ export async function GET() {
         
         if (!rindexerRes.ok) {
             console.error("Rindexer fetch failed:", await rindexerRes.text());
+            rindexerFailed = true;
         } else {
             const json = await rindexerRes.json();
             salesData = json.data?.allItemBoughts?.nodes || [];
         }
     } catch (e) {
         console.error("Failed to connect to Rindexer:", e);
-        // Fallback to empty data (AI will just see empty array, maybe handle gracefully?)
+        rindexerFailed = true;
     }
 
     // 3. Validate and sanitize salesData
@@ -63,10 +65,13 @@ export async function GET() {
     }).slice(0, 20); // Limit to 20 items max
 
     // 4. Generate Analysis
-    // If no valid sales data, return a generic message
+    // Handle different empty data scenarios
     if (validatedData.length === 0) {
+        const message = rindexerFailed 
+            ? "Unable to fetch market data. Please try again later."
+            : "No recent market activity detected to analyze.";
         return NextResponse.json({ 
-            analysis: "No recent market activity detected to analyze.", 
+            analysis: message, 
             timestamp: new Date().toISOString() 
         });
     }
