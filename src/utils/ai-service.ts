@@ -28,13 +28,19 @@ export async function generateMarketAnalysis(salesData: SalesDataItem[], mock = 
     // I will implement a fetch-based fallback or we can install the SDK.
     // GUIDANCE: For now I will use direct fetch to avoid forcing an npm install content.
     
+    // Extract only relevant fields to minimize token usage
+    const summarizedData = salesData.map(({ price, blockTimestamp }) => ({
+      price,
+      time: blockTimestamp,
+    }));
+    
     // Construct Prompt
     const prompt = `
       You are an expert NFT Market Analyst for the Neon Marketplace.
       Analyze the following recent sales data and provide a concise market summary (max 3 sentences).
       Focus on price trends, volume, or notable high-value sales.
       
-      Data: ${JSON.stringify(salesData, null, 2)}
+      Data: ${JSON.stringify(summarizedData)}
       
       Output plain text only.
     `;
