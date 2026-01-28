@@ -67,3 +67,7 @@ foundry/docs/
 # rindexer
 .rindexer
 marketplaceIndexer/generated_csv/
+
+# UI UX Pro Max
+.agent
+.shared
