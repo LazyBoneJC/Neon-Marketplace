@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 
 interface AIAnalysisResponse {
     analysis: string
@@ -28,21 +28,38 @@ export default function MarketAnalyst() {
 
     // Typing effect state
     const [displayedText, setDisplayedText] = useState("")
+    const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
-        if (data?.analysis) {
-            let i = 0
-            setDisplayedText("")
-            const text = data.analysis
-            
-            // Simple typing effect
-            const intervalId = setInterval(() => {
-                setDisplayedText((prev) => prev + text.charAt(i))
-                i++
-                if (i >= text.length) clearInterval(intervalId)
-            }, 20) // Speed of typing
+        // Clear any existing interval before starting a new one
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+        }
 
-            return () => clearInterval(intervalId)
+        if (data?.analysis) {
+            const text = data.analysis
+            let currentIndex = 0
+            setDisplayedText("")
+            
+            intervalRef.current = setInterval(() => {
+                if (currentIndex < text.length) {
+                    setDisplayedText((prev) => prev + text.charAt(currentIndex))
+                    currentIndex++
+                } else {
+                    if (intervalRef.current) {
+                        clearInterval(intervalRef.current)
+                        intervalRef.current = null
+                    }
+                }
+            }, 20)
+        }
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+            }
         }
     }, [data])
 
@@ -53,7 +70,7 @@ export default function MarketAnalyst() {
                     <span className="text-lg">⚠️</span> Analyst Unavailable
                 </h3>
                 <p className="text-sm text-red-300/70">
-                    The AI analyst is currently unavailable. Please try again later.
+                    {error instanceof Error ? error.message : "The AI analyst is currently unavailable. Please try again later."}
                 </p>
             </div>
         )
