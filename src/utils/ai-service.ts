@@ -3,7 +3,16 @@
 const API_KEY = process.env.GEMINI_API_KEY || "";
 const GEN_AI_MODEL = "gemini-2.5-flash-lite"; // Using 1.5 Flash as standard, user mentioned 2.5 but likely meant 1.5 or 2.0
 
-export async function generateMarketAnalysis(salesData: any[], mock = false): Promise<string> {
+interface SalesDataItem {
+  price?: string;
+  tokenId?: string;
+  nftAddress?: string;
+  blockTimestamp?: string;
+  txHash?: string;
+  [key: string]: unknown;
+}
+
+export async function generateMarketAnalysis(salesData: SalesDataItem[], mock = false): Promise<string> {
   if (mock) {
     return "Mock Analysis: The market is currently seeing a steady volume of trades. Prices are hovering around 0.5 ETH with a slight upward trend in the last hour. Blue-chip collections remain dominant.";
   }
