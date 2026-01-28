@@ -10,6 +10,9 @@ interface AIAnalysisResponse {
     error?: string
 }
 
+// Typing animation speed in milliseconds per character
+const TYPING_SPEED_MS = 20
+
 export default function MarketAnalyst() {
     // Basic Fetcher
     const fetchAnalysis = async (): Promise<AIAnalysisResponse> => {
@@ -23,6 +26,7 @@ export default function MarketAnalyst() {
         queryKey: ["marketAnalysis"],
         queryFn: fetchAnalysis,
         staleTime: 1000 * 60 * 60, // 1 hour stale time (matches API cache)
+        // Single retry to avoid long UI hangs; AI service errors are usually persistent
         retry: 1,
     })
 
@@ -52,7 +56,7 @@ export default function MarketAnalyst() {
                         intervalRef.current = null
                     }
                 }
-            }, 20)
+            }, TYPING_SPEED_MS)
         }
 
         return () => {
@@ -108,7 +112,7 @@ export default function MarketAnalyst() {
                              <div className="h-4 bg-white/5 rounded w-5/6"></div>
                          </div>
                     ) : (
-                        <div className="prose prose-invert max-w-none">
+                        <div className="prose prose-invert max-w-none" aria-live="polite" aria-atomic="true">
                             <p>{displayedText}</p>
                         </div>
                     )}
