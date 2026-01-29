@@ -7,8 +7,12 @@ export const dynamic = 'force-dynamic';
 // Revalidate this route every hour to save costs/tokens (Caching)
 export const revalidate = 3600; 
 
+// Use RINDEXER_URL (server-side runtime variable) instead of NEXT_PUBLIC_ (build-time)
 const GRAPHQL_ENDPOINT = (() => {
-    const envUrl = process.env.NEXT_PUBLIC_RINDEXER_URL || '/rindexer-proxy/graphql';
+    // Priority: RINDEXER_URL (runtime) > NEXT_PUBLIC_RINDEXER_URL (build-time) > fallback
+    const envUrl = process.env.RINDEXER_URL 
+        || process.env.NEXT_PUBLIC_RINDEXER_URL 
+        || 'http://127.0.0.1:3001/graphql';
     
     // If it's already an absolute URL, use it directly
     if (envUrl.startsWith('http://') || envUrl.startsWith('https://')) {
@@ -16,7 +20,6 @@ const GRAPHQL_ENDPOINT = (() => {
     }
     
     // For relative URLs in server context, we need to construct the full URL
-    // Use APP_URL (custom env var) or VERCEL_URL (auto-set by Vercel/similar platforms)
     const baseUrl = process.env.APP_URL 
         || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
         || 'http://127.0.0.1:3001';
