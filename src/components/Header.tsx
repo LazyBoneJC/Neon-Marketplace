@@ -13,10 +13,9 @@ export default function Header() {
     const isActive = (path: string) => pathname === path
 
     return (
-        <header className="sticky top-0 z-50 w-full bg-[#202020]/90 backdrop-blur-md border-b border-white/10">
-            {/* Main Navigation Row */}
-            <nav className="px-4 md:px-8 py-3 flex justify-between items-center">
-                {/* Left: Logo */}
+        <nav className="sticky top-0 z-50 w-full px-4 md:px-8 py-3 border-b border-white/10 flex justify-between items-center bg-[#202020]/90 backdrop-blur-md">
+            {/* Left: Logo + System Status */}
+            <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="relative">
                         <Image
@@ -32,59 +31,52 @@ export default function Header() {
                     </h1>
                 </Link>
 
-                {/* Right: Core CTAs */}
-                <div className="flex items-center gap-2 md:gap-3">
-                    {/* GitHub - Icon only */}
-                    <a
-                        href="https://github.com/lazybonejc/neon-marketplace"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all"
-                        aria-label="GitHub Repository"
-                    >
-                        <FaGithub className="h-4 w-4" />
-                    </a>
+                {/* Rindexer Status - Subtle indicator */}
+                <div className="hidden md:block">
+                    <RindexerStatus />
+                </div>
+            </div>
 
-                    {/* Mint Ninja */}
-                    <Link
-                        href="/ninja-nft"
-                        className={`
-                            flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold font-mono text-sm transition-all
-                            ${
-                                isActive("/ninja-nft")
-                                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/50"
-                                    : "bg-zinc-800/50 text-zinc-300 border border-zinc-700/50 hover:border-purple-500/50 hover:text-purple-400"
-                            }
-                        `}
-                    >
-                        <span>🥷</span>
-                        <span className="hidden sm:inline">Mint</span>
-                    </Link>
+            {/* Right: Actions + Wallet + Compliance */}
+            <div className="flex items-center gap-2 md:gap-3">
+                {/* GitHub */}
+                <a
+                    href="https://github.com/lazybonejc/neon-marketplace"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:text-white hover:border-zinc-600 transition-all hidden md:block"
+                    aria-label="GitHub Repository"
+                >
+                    <FaGithub className="h-4 w-4" />
+                </a>
 
-                    {/* Connect Wallet */}
+                {/* Mint Ninja */}
+                <Link
+                    href="/ninja-nft"
+                    className={`
+                        flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold font-mono text-sm transition-all
+                        ${
+                            isActive("/ninja-nft")
+                                ? "bg-purple-500/20 text-purple-400 border border-purple-500/50"
+                                : "bg-zinc-800/50 text-zinc-300 border border-zinc-700/50 hover:border-purple-500/50 hover:text-purple-400"
+                        }
+                    `}
+                >
+                    <span>🥷</span>
+                    <span className="hidden sm:inline">Mint</span>
+                </Link>
+
+                {/* Wallet Connect + Compliance Shield together */}
+                <div className="flex items-center gap-2">
                     <ConnectButton
                         showBalance={false}
                         chainStatus={{ smallScreen: "icon", largeScreen: "full" }}
                         accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
                     />
+                    {/* Compliance Shield - Right next to wallet */}
+                    <ComplianceShield />
                 </div>
-            </nav>
-
-            {/* Status Bar Row */}
-            <div className="px-4 md:px-8 py-1.5 flex items-center justify-between border-t border-white/5 bg-zinc-900/50 text-xs">
-                {/* Left: Status Indicators */}
-                <div className="flex items-center gap-4 text-zinc-500">
-                    <RindexerStatus />
-                    <div className="hidden sm:block">
-                        <ComplianceShield />
-                    </div>
-                </div>
-
-                {/* Right: Slogan */}
-                <span className="hidden md:block italic text-zinc-600">
-                    Non-custodial • Permissionless
-                </span>
             </div>
-        </header>
+        </nav>
     )
 }
