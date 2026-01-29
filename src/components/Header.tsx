@@ -53,6 +53,7 @@ export default function Header() {
                 {/* Mint Ninja */}
                 <Link
                     href="/ninja-nft"
+                    aria-label="Mint Ninja NFT"
                     className={`
                         flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold font-mono text-sm transition-all
                         ${

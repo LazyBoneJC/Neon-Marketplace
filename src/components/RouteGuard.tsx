@@ -1,8 +1,15 @@
 "use client"
 
+/**
+ * RouteGuard - Protects routes that require wallet connection and compliance approval
+ *
+ * Currently not used in this PR, but prepared for future protected routes (e.g., /list-nft, /buy-nft)
+ * when those pages are refactored to use this shared component instead of inline compliance checks.
+ */
+
 import { useAccount } from "wagmi"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
 interface RouteGuardProps {
     children: React.ReactNode
@@ -14,20 +21,7 @@ export default function RouteGuard({ children }: RouteGuardProps) {
     const [isCompliant, setIsCompliant] = useState<boolean | null>(null)
     const [isChecking, setIsChecking] = useState(true)
 
-    useEffect(() => {
-        // If not connected, redirect to home with connect prompt
-        if (!isConnected) {
-            router.push("/?connect=true")
-            return
-        }
-
-        // Check compliance
-        if (address) {
-            checkCompliance(address)
-        }
-    }, [isConnected, address, router])
-
-    async function checkCompliance(walletAddress: string) {
+    const checkCompliance = useCallback(async (walletAddress: string) => {
         setIsChecking(true)
         try {
             const response = await fetch("/api/compliance", {
@@ -48,14 +42,27 @@ export default function RouteGuard({ children }: RouteGuardProps) {
         } finally {
             setIsChecking(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        // If not connected, redirect to home with connect prompt
+        if (!isConnected) {
+            router.push("/?connect=true")
+            return
+        }
+
+        // Check compliance
+        if (address) {
+            checkCompliance(address)
+        }
+    }, [isConnected, address, router, checkCompliance])
 
     // Loading state
     if (!isConnected || isChecking) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
-                <p className="text-gray-400 animate-pulse">
+                <p className="text-gray-400 motion-safe:animate-pulse">
                     {!isConnected ? "Redirecting..." : "Verifying compliance status..."}
                 </p>
             </div>
@@ -78,6 +85,7 @@ export default function RouteGuard({ children }: RouteGuardProps) {
                                 stroke="currentColor"
                                 strokeWidth="1.5"
                                 className="text-red-500"
+                                aria-hidden="true"
                             >
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                 <line x1="12" x2="12" y1="8" y2="12" />

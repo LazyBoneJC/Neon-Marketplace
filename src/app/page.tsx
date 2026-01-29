@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { useAccount } from "wagmi"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import HeroSection from "@/components/HeroSection"
 import ComplianceModal from "@/components/ComplianceModal"
 import PriceChart from "@/components/PriceChart"
@@ -13,7 +13,7 @@ const RecentlyListedNFTs = dynamic(
     () => import("@/components/RecentlyListed"),
     {
         loading: () => (
-            <div className="w-full h-64 bg-zinc-800/50 rounded-2xl animate-pulse flex items-center justify-center">
+            <div className="w-full h-64 bg-zinc-800/50 rounded-2xl motion-safe:animate-pulse flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
             </div>
         ),
@@ -26,6 +26,29 @@ export default function Home() {
     const [isChecking, setIsChecking] = useState(false)
     const [isComplianceChecked, setIsComplianceChecked] = useState(true)
 
+    const checkCompliance = useCallback(
+        async (walletAddress: string): Promise<boolean> => {
+            try {
+                const response = await fetch("/api/compliance", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ address: walletAddress }),
+                })
+
+                if (!response.ok) {
+                    throw new Error("Compliance check failed")
+                }
+
+                const data = await response.json()
+                return data.success && data.isApproved
+            } catch (error) {
+                console.error("Compliance check error:", error)
+                return false
+            }
+        },
+        []
+    )
+
     useEffect(() => {
         if (address) {
             setIsChecking(true)
@@ -37,27 +60,7 @@ export default function Home() {
             // Reset compliance state when wallet disconnects
             setIsComplianceChecked(true)
         }
-    }, [address])
-
-    async function checkCompliance(walletAddress: string): Promise<boolean> {
-        try {
-            const response = await fetch("/api/compliance", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ address: walletAddress }),
-            })
-
-            if (!response.ok) {
-                throw new Error("Compliance check failed")
-            }
-
-            const data = await response.json()
-            return data.success && data.isApproved
-        } catch (error) {
-            console.error("Compliance check error:", error)
-            return false
-        }
-    }
+    }, [address, checkCompliance])
 
     return (
         <main className="flex min-h-screen flex-col items-center bg-zinc-900 text-white">
