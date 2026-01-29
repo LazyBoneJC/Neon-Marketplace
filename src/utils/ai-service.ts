@@ -23,11 +23,15 @@ export async function generateMarketAnalysis(salesData: SalesDataItem[], mock = 
 
   try {
     // Using REST API directly to avoid SDK dependency
-    // Extract only relevant fields to minimize token usage
-    const summarizedData = salesData.map(({ price, blockTimestamp }) => ({
-      price,
-      time: blockTimestamp,
-    }));
+    // Extract only relevant fields and format price for readability
+    const summarizedData = salesData.map(({ price, blockTimestamp }) => {
+      // Convert raw USDC price (6 decimals) to human-readable format
+      const priceInUSDC = price ? (Number(price) / 1_000_000).toFixed(2) : '0';
+      return {
+        priceUSDC: priceInUSDC,
+        time: blockTimestamp,
+      };
+    });
     
     // Construct Prompt
     const prompt = `
