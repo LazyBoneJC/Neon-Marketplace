@@ -5,7 +5,7 @@ import { createChart, ColorType, IChartApi, AreaSeries } from "lightweight-chart
 import React, { useEffect, useRef } from "react"
 
 const generateData = (numberOfCandles = 500) => {
-    let date = new Date()
+    const date = new Date()
     date.setDate(date.getDate() - numberOfCandles)
 
     let value = 100

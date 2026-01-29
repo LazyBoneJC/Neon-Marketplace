@@ -27,7 +27,7 @@ const CheckIcon = () => (
 )
 
 export default function ListNftForm() {
-    const { address } = useAccount()
+    const { address: _address } = useAccount()
     const chainId = useChainId()
     const router = useRouter()
 

@@ -9,7 +9,7 @@ export default function formatPrice(priceStr: string) {
 
         // Convert to string representation with proper decimal places
         const wholeStr = whole.toString()
-        let fractionStr = fraction.toString().padStart(6, "0")
+        const fractionStr = fraction.toString().padStart(6, "0")
 
         // Remove trailing zeros from the fraction part
         const trimmedFraction = fractionStr.replace(/0+$/, "")

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid"
 
 // 定義統一的回傳介面 (這就是你的 Protocol)
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
     success: boolean
     message?: string
     isApproved?: boolean
