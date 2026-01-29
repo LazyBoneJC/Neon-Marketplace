@@ -27,7 +27,7 @@ const CheckIcon = () => (
 )
 
 export default function ListNftForm() {
-    const { address: _address } = useAccount()
+    useAccount() // Only needed for hook context, not using address here
     const chainId = useChainId()
     const router = useRouter()
 

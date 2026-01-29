@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateMarketAnalysis } from '@/utils/ai-service';
 
+// Force dynamic rendering since we fetch external data
+export const dynamic = 'force-dynamic';
+
 // Revalidate this route every hour to save costs/tokens (Caching)
 export const revalidate = 3600; 
 
@@ -41,7 +44,6 @@ export async function GET() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: RECENT_SALES_QUERY }),
-            cache: 'no-store' // Rely on route-level revalidation (1 hour)
         });
         
         if (!rindexerRes.ok) {
