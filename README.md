@@ -35,10 +35,13 @@ The platform features specific collections like **Ninja NFT**, demonstrating sup
 
 - **🛒 NFT Trading:** Buy and sell NFTs securely using smart contracts.
 - **⚡ Real-time Indexing:** Powered by `rindexer` to fetch off-chain events instantly.
+- **🤖 AI Chatbot:** Interactive assistant for market queries, NFT listing, and security checks (supports Chinese/English).
+- **📊 AI Market Analyst:** Real-time AI-powered market analysis with price trends and insights.
 - **🎨 Custom Collections:** Support for specific collections like Ninja NFT.
 - **👛 Wallet Integration:** Seamless connection via RainbowKit & Wagmi.
 - **📱 Responsive Design:** Modern UI built with Tailwind CSS.
 - **🛡️ Compliance Ready:** Integrated compliance checks for safer transactions.
+
 
 ## 🏗️ Architecture
 
@@ -151,6 +154,33 @@ sequenceDiagram
     end
 ```
 
+## 🤖 AI Features
+
+### AI Chatbot
+
+An interactive assistant accessible via the floating action button (FAB) in the bottom-right corner.
+
+**Capabilities:**
+- 💬 **Natural Language Interaction:** Ask about market trends, list NFTs, or check wallet security
+- 🌐 **Bilingual Support:** Automatically detects and responds in Chinese or English
+- 🔄 **Language Toggle:** Manual switch between languages in the header
+- 💾 **Chat History:** Persisted locally for seamless experience
+
+**Quick Actions:**
+| Action | Chinese | English |
+|--------|---------|---------|
+| Market Query | 查詢價格 | Check Prices |
+| List NFT | 幫我上架 | List NFT |
+| Security Check | 檢查安全 | Security Check |
+
+### AI Market Analyst
+
+Real-time market analysis powered by Gemini AI, displaying insights on recent trades and price trends.
+
+### Mock Mode
+
+For development and demos, set `MOCK_AI=true` to use predefined responses without consuming API quota.
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -159,6 +189,12 @@ sequenceDiagram
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Web3 Libraries:** Wagmi, Viem, RainbowKit
+
+### AI & Backend
+
+- **AI Model:** Google Gemini (`gemini-2.5-flash-lite`)
+- **API Routes:** Next.js API Routes
+- **Compliance:** Circle API (Address Screening)
 
 ### Smart Contracts
 
@@ -244,9 +280,33 @@ Open http://localhost:3000 with your browser to see the result.
 ├── marketplaceIndexer/   # Indexer configuration and Docker setup
 ├── src/                  # Frontend source code (Next.js)
 │   ├── app/              # App Router pages
+│   │   └── api/          # API Routes (chat, ai-analyst, compliance)
 │   ├── components/       # React components
+│   │   └── AI/           # AI components (AIChatbot, TransactionPreview)
+│   ├── hooks/            # Custom hooks (useChatbot, useTransactionPrecheck)
+│   ├── utils/            # Utilities (rindexer-client, ai-service)
 │   └── ...
 └── public/               # Static assets
+```
+
+## ⚙️ Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```bash
+# AI Configuration
+GEMINI_API_KEY=your_gemini_api_key    # Required for real AI responses
+MOCK_AI=true                           # Set to 'true' for mock mode (no API costs)
+
+# Rindexer (Indexer)
+RINDEXER_URL=https://your-indexer-url/graphql
+NEXT_PUBLIC_RINDEXER_URL=https://your-indexer-url/graphql
+
+# Circle Compliance API
+CIRCLE_API_KEY=your_circle_api_key
+
+# WalletConnect
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 
 ## 🧪 Running Tests

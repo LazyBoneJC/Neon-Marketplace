@@ -12,10 +12,11 @@ interface SalesDataItem {
 }
 
 // More realistic mock responses for demo purposes
+// Note: NFT prices in this marketplace are typically 500-1000 USDC
 const MOCK_RESPONSES = [
-  "Recent market activity shows steady trading volume with an average sale price of 125.50 USDC. The Ninja NFT collection remains the most actively traded, with 3 transactions in the last hour. Overall market sentiment appears bullish with increasing buyer interest.",
-  "Market analysis indicates a 15% increase in trading activity compared to yesterday. Notable high-value sale: Token #42 sold for 500 USDC. Liquidity is healthy with consistent bid-ask spreads across listed items.",
-  "The Neon Marketplace is experiencing moderate activity with floor prices holding steady at 50 USDC. Recent buyer behavior suggests accumulation phase. AI recommendation: Monitor for potential breakout above 200 USDC resistance level.",
+  "Recent market activity shows steady trading volume with an average sale price of 750 USDC. The Ninja NFT collection remains the most actively traded, with 3 transactions in the last 24 hours. Overall market sentiment appears bullish with increasing buyer interest.",
+  "Market analysis indicates a 15% increase in trading activity compared to yesterday. Notable high-value sale: Ninja #42 sold for 950 USDC. Liquidity is healthy with floor prices holding around 500 USDC across listed items.",
+  "The Neon Marketplace is experiencing moderate activity with floor prices holding steady at 500 USDC. Recent buyer behavior suggests accumulation phase. AI recommendation: Consider listing in the 600-800 USDC range for competitive positioning.",
 ];
 
 export async function generateMarketAnalysis(salesData: SalesDataItem[], mock = false): Promise<string> {
