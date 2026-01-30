@@ -7,6 +7,8 @@ import HeroSection from "@/components/HeroSection"
 import ComplianceModal from "@/components/ComplianceModal"
 import PriceChart from "@/components/PriceChart"
 import MarketAnalyst from "@/components/AI/MarketAnalyst"
+import AIChatbot from "@/components/AI/AIChatbot"
+
 
 // Lazy load heavy components
 const RecentlyListedNFTs = dynamic(
@@ -124,6 +126,10 @@ export default function Home() {
                     <RecentlyListedNFTs />
                 </section>
             </div>
+
+            {/* AI Chatbot FAB - Global floating assistant */}
+            <AIChatbot />
         </main>
     )
 }
+
