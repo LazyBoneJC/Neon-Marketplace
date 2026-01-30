@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 
 interface AIAnalysisResponse {
     analysis: string
@@ -11,7 +11,7 @@ interface AIAnalysisResponse {
 }
 
 // Typing animation speed in milliseconds per character
-const TYPING_SPEED_MS = 20
+const TYPING_SPEED_MS = 15
 
 export default function MarketAnalyst() {
     // Basic Fetcher
@@ -26,37 +26,42 @@ export default function MarketAnalyst() {
         queryKey: ["marketAnalysis"],
         queryFn: fetchAnalysis,
         staleTime: 1000 * 60 * 60, // 1 hour stale time (matches API cache)
-        // Single retry to avoid long UI hangs; AI service errors are usually persistent
         retry: 1,
     })
 
-    // Typing effect state
+    // Typing effect state - use ref for index to avoid closure issues
     const [displayedText, setDisplayedText] = useState("")
+    const indexRef = useRef(0)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    useEffect(() => {
-        // Clear any existing interval before starting a new one
+    // Stable typing function using useCallback
+    const startTyping = useCallback((text: string) => {
+        // Reset state
+        indexRef.current = 0
+        setDisplayedText("")
+        
+        // Clear any existing interval
         if (intervalRef.current) {
             clearInterval(intervalRef.current)
-            intervalRef.current = null
         }
 
-        if (data?.analysis) {
-            const text = data.analysis
-            let currentIndex = 0
-            setDisplayedText("")
-            
-            intervalRef.current = setInterval(() => {
-                if (currentIndex < text.length) {
-                    setDisplayedText((prev) => prev + text.charAt(currentIndex))
-                    currentIndex++
-                } else {
-                    if (intervalRef.current) {
-                        clearInterval(intervalRef.current)
-                        intervalRef.current = null
-                    }
+        intervalRef.current = setInterval(() => {
+            if (indexRef.current < text.length) {
+                // Use functional update to avoid stale state
+                setDisplayedText(text.substring(0, indexRef.current + 1))
+                indexRef.current++
+            } else {
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current)
+                    intervalRef.current = null
                 }
-            }, TYPING_SPEED_MS)
+            }
+        }, TYPING_SPEED_MS)
+    }, [])
+
+    useEffect(() => {
+        if (data?.analysis) {
+            startTyping(data.analysis)
         }
 
         return () => {
@@ -65,7 +70,7 @@ export default function MarketAnalyst() {
                 intervalRef.current = null
             }
         }
-    }, [data])
+    }, [data, startTyping])
 
     if (isError) {
         return (
@@ -113,7 +118,7 @@ export default function MarketAnalyst() {
                          </div>
                     ) : (
                         <div className="prose prose-invert max-w-none" aria-live="polite" aria-atomic="true">
-                            <p>{displayedText}</p>
+                            <p>{displayedText}<span className="animate-pulse">|</span></p>
                         </div>
                     )}
                 </div>
@@ -121,7 +126,7 @@ export default function MarketAnalyst() {
                  {/* Footer / Mock Indicator */}
                  {data?.isMock && (
                     <div className="text-[10px] text-yellow-500/50 pt-2 border-t border-white/5 mt-auto">
-                        MOCK MODE ENABLED
+                        DEMO MODE
                     </div>
                 )}
             </div>
