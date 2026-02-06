@@ -165,13 +165,15 @@ An interactive assistant accessible via the floating action button (FAB) in the 
 - 🌐 **Bilingual Support:** Automatically detects and responds in Chinese or English
 - 🔄 **Language Toggle:** Manual switch between languages in the header
 - 💾 **Chat History:** Persisted locally for seamless experience
+- 👛 **Wallet Validation:** Requires wallet connection for listing actions
+- 🛡️ **Real Compliance Check:** Security checks call the real Circle API (even in mock mode)
 
 **Quick Actions:**
 | Action | Chinese | English |
 |--------|---------|---------|
 | Market Query | 查詢價格 | Check Prices |
 | List NFT | 幫我上架 | List NFT |
-| Security Check | 檢查安全 | Security Check |
+| Security Check | 檢查 0x... | Check 0x... |
 
 ### AI Market Analyst
 
@@ -179,7 +181,9 @@ Real-time market analysis powered by Gemini AI, displaying insights on recent tr
 
 ### Mock Mode
 
-For development and demos, set `MOCK_AI=true` to use predefined responses without consuming API quota.
+For development and demos, set `MOCK_AI=true` to use predefined responses without consuming Gemini API quota.
+
+> **Note:** Even in mock mode, the compliance check still calls the real Circle API to provide accurate security results.
 
 ## 🛠️ Tech Stack
 
@@ -296,7 +300,7 @@ Create a `.env.local` file in the root directory:
 ```bash
 # AI Configuration
 GEMINI_API_KEY=your_gemini_api_key    # Required for real AI responses
-MOCK_AI=true                           # Set to 'true' for mock mode (no API costs)
+MOCK_AI=true                           # Set to 'true' for mock mode (no Gemini API costs)
 
 # Rindexer (Indexer)
 RINDEXER_URL=https://your-indexer-url/graphql
@@ -304,6 +308,7 @@ NEXT_PUBLIC_RINDEXER_URL=https://your-indexer-url/graphql
 
 # Circle Compliance API
 CIRCLE_API_KEY=your_circle_api_key
+ENABLE_COMPLIANCE_CHECK=true           # Set to 'true' to enable address screening
 
 # WalletConnect
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
