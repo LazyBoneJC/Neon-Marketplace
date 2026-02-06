@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useMemo, useState, useCallback } from "react"
 import NFTBox from "./NFTBox"
 import Link from "next/link"
 import FaucetButton from "./FaucetButton"
@@ -7,41 +7,29 @@ import FaucetButton from "./FaucetButton"
 // 定義 Rindexer 的 GraphQL URL (通常預設是這個，或從環境變數讀取)
 const RINDEXER_URL = process.env.NEXT_PUBLIC_RINDEXER_URL || "http://127.0.0.1:3001/graphql"
 
-// 定義 GraphQL 查詢
-// 我們使用 RINDEXER_ID_DESC 排序，因為它是自動遞增的 ID，能代表事件被索引的順序（即時間順序）
-// const GET_EVENTS_QUERY = `
-//   query GetMarketplaceEvents {
-//     allItemListeds(orderBy: [RINDEXER_ID_DESC], first: 50) {
-//       nodes {
-//         rindexerId
-//         contractAddress: nftAddress
-//         tokenId
-//         price
-//         seller
-//         __typename
-//       }
-//     }
-//     allItemBoughts(orderBy: [RINDEXER_ID_DESC], first: 50) {
-//       nodes {
-//         rindexerId
-//         contractAddress: nftAddress
-//         tokenId
-//         __typename
-//       }
-//     }
-//     allItemCanceleds(orderBy: [RINDEXER_ID_DESC], first: 50) {
-//       nodes {
-//         rindexerId
-//         contractAddress: nftAddress
-//         tokenId
-//         __typename
-//       }
-//     }
-//   }
-// `
+// ============== Types ==============
+type SortOption = "recent" | "price_asc" | "price_desc"
 
-// 1. 修改 Query: 必須抓取 blockNumber 和 logIndex 以便正確排序
-// 使用區塊鏈的原生順序 (Block -> Tx -> Log) 才是最安全的
+interface FilterState {
+    minPrice: string
+    maxPrice: string
+}
+
+interface BaseEvent {
+    contractAddress: string
+    tokenId: string
+    blockNumber: number
+    logIndex: number
+    __typename: "ItemListed" | "ItemBought" | "ItemCanceled"
+}
+
+interface ItemListedEvent extends BaseEvent {
+    __typename: "ItemListed"
+    price: string
+    seller: string
+}
+
+// ============== GraphQL Query ==============
 const GET_EVENTS_QUERY = `
   query GetMarketplaceEvents {
     allItemListeds(orderBy: [BLOCK_NUMBER_DESC, LOG_INDEX_DESC], first: 50) {
@@ -76,22 +64,7 @@ const GET_EVENTS_QUERY = `
   }
 `
 
-// 定義事件的 TypeScript 介面
-interface BaseEvent {
-    contractAddress: string
-    tokenId: string
-    blockNumber: number
-    logIndex: number
-    __typename: "ItemListed" | "ItemBought" | "ItemCanceled"
-}
-
-interface ItemListedEvent extends BaseEvent {
-    __typename: "ItemListed"
-    price: string
-    seller: string
-}
-
-// Fetcher 函數
+// ============== Fetcher ==============
 const fetchMarketplaceEvents = async () => {
     const response = await fetch(RINDEXER_URL, {
         method: "POST",
@@ -107,17 +80,169 @@ const fetchMarketplaceEvents = async () => {
     return json.data
 }
 
+// ============== Helper: Convert raw price to USDC ==============
+const toUSDC = (rawPrice: string): number => Number(rawPrice) / 1_000_000
+
+// ============== FilterBar Component ==============
+function FilterBar({
+    sortBy,
+    onSortChange,
+    filters,
+    onFilterChange,
+    onClearFilters,
+    hasActiveFilters,
+}: {
+    sortBy: SortOption
+    onSortChange: (sort: SortOption) => void
+    filters: FilterState
+    onFilterChange: (filters: FilterState) => void
+    onClearFilters: () => void
+    hasActiveFilters: boolean
+}) {
+    const [localFilters, setLocalFilters] = useState(filters)
+    const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+    const handleApply = () => {
+        onFilterChange(localFilters)
+        setIsFilterOpen(false)
+    }
+
+    const handleClear = () => {
+        setLocalFilters({ minPrice: "", maxPrice: "" })
+        onClearFilters()
+        setIsFilterOpen(false)
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-3">
+            {/* Sort Dropdown */}
+            <select
+                value={sortBy}
+                onChange={(e) => onSortChange(e.target.value as SortOption)}
+                className="
+                    px-4 py-2 rounded-lg
+                    bg-zinc-800 border border-zinc-700
+                    text-sm text-zinc-300
+                    hover:border-purple-500/50 focus:border-purple-500 focus:outline-none
+                    transition-colors cursor-pointer
+                "
+            >
+                <option value="recent">Recently Listed</option>
+                <option value="price_asc">Price: Low → High</option>
+                <option value="price_desc">Price: High → Low</option>
+            </select>
+
+            {/* Filter Button */}
+            <div className="relative">
+                <button
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`
+                        px-4 py-2 rounded-lg border text-sm
+                        transition-all duration-200
+                        ${hasActiveFilters
+                            ? "bg-purple-600/20 border-purple-500 text-purple-300"
+                            : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-purple-500/50"
+                        }
+                    `}
+                >
+                    <span className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                        </svg>
+                        Filter
+                        {hasActiveFilters && <span className="w-2 h-2 bg-purple-500 rounded-full" />}
+                    </span>
+                </button>
+
+                {/* Filter Dropdown */}
+                {isFilterOpen && (
+                    <div className="
+                        absolute top-full right-0 mt-2 z-50
+                        w-64 p-4 rounded-xl
+                        bg-zinc-900 border border-zinc-700
+                        shadow-xl shadow-black/50
+                    ">
+                        <h4 className="text-sm font-semibold text-zinc-300 mb-3">Price Range (USDC)</h4>
+                        
+                        <div className="flex items-center gap-2 mb-4">
+                            <input
+                                type="number"
+                                placeholder="Min"
+                                value={localFilters.minPrice}
+                                onChange={(e) => setLocalFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                                className="
+                                    w-full min-w-0 px-3 py-2 rounded-lg
+                                    bg-zinc-800 border border-zinc-700
+                                    text-sm text-white placeholder-zinc-500
+                                    focus:border-purple-500 focus:outline-none
+                                "
+                            />
+                            <span className="text-zinc-500 shrink-0">—</span>
+                            <input
+                                type="number"
+                                placeholder="Max"
+                                value={localFilters.maxPrice}
+                                onChange={(e) => setLocalFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                                className="
+                                    w-full min-w-0 px-3 py-2 rounded-lg
+                                    bg-zinc-800 border border-zinc-700
+                                    text-sm text-white placeholder-zinc-500
+                                    focus:border-purple-500 focus:outline-none
+                                "
+                            />
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleClear}
+                                className="
+                                    flex-1 px-3 py-2 rounded-lg
+                                    bg-zinc-800 border border-zinc-700
+                                    text-sm text-zinc-400 hover:text-white
+                                    transition-colors
+                                "
+                            >
+                                Clear
+                            </button>
+                            <button
+                                onClick={handleApply}
+                                className="
+                                    flex-1 px-3 py-2 rounded-lg
+                                    bg-purple-600 hover:bg-purple-500
+                                    text-sm text-white font-medium
+                                    transition-colors
+                                "
+                            >
+                                Apply
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ============== Main Component ==============
 export default function RecentlyListedNFTs() {
-    // 1. 使用 React Query 撈取資料
+    // Filter & Sort State
+    const [sortBy, setSortBy] = useState<SortOption>("recent")
+    const [filters, setFilters] = useState<FilterState>({ minPrice: "", maxPrice: "" })
+
+    const hasActiveFilters = filters.minPrice !== "" || filters.maxPrice !== ""
+
+    const handleClearFilters = useCallback(() => {
+        setFilters({ minPrice: "", maxPrice: "" })
+    }, [])
+
+    // Data Fetching
     const { data, isLoading, error } = useQuery({
-        queryKey: ["marketplace-events"], // 唯一的查詢鍵
-        queryFn: fetchMarketplaceEvents, // 查詢函數
-        refetchInterval: 5000, // 每 5 秒自動更新一次，模擬即時性
+        queryKey: ["marketplace-events"],
+        queryFn: fetchMarketplaceEvents,
+        refetchInterval: 5000,
     })
 
-    // 2. 使用 useMemo 處理過濾邏輯:
-    // 只顯示目前仍在上架的 NFTs, 即最新事件為 ItemListed 的, 排除已被買走或取消的, 並依 rindexerId 由大到小排序, 代表最新的在前, 以提升使用者體驗, 讓他們看到最新上架的 NFT, 而不是亂序的
-    // useMemo 用來避免每次 render 都重新計算
+    // Process, Filter & Sort listings
     const activeListings = useMemo(() => {
         if (!data) return []
 
@@ -125,47 +250,59 @@ export default function RecentlyListedNFTs() {
         const boughtNodes: BaseEvent[] = data.allItemBoughts.nodes
         const canceledNodes: BaseEvent[] = data.allItemCanceleds.nodes
 
-        // 合併所有事件
+        // Merge and sort all events by block order
         const allEvents = [...listedNodes, ...boughtNodes, ...canceledNodes]
-
-        // 根據 rindexerId 由大到小排序 (最新的在前)
-        // 原理：我們需要先確保事件是按時間順序處理的，這樣才能正確判斷每個 NFT 的最新狀態
-        // sort 原理：a-b 為由小到大，b-a 為由大到小，所以這裡用 b.rindexerId - a.rindexerId，代表由大到小排序
-        // allEvents.sort((a, b) => b.rindexerId - a.rindexerId)
-
-        // 3. 關鍵修正: 改用 blockNumber 和 logIndex 進行排序
-        // 先比較區塊高度，如果同區塊，再比較 Log Index
         allEvents.sort((a, b) => {
             if (b.blockNumber !== a.blockNumber) {
-                return b.blockNumber - a.blockNumber // 區塊高度由大到小
+                return b.blockNumber - a.blockNumber
             }
-            return b.logIndex - a.logIndex // 同區塊內，事件順序由大到小
+            return b.logIndex - a.logIndex
         })
 
-        // 使用 Map 來記錄每個 NFT (ID + Address) 的最新狀態
-        // Key: `${contractAddress}-${tokenId}`
+        // Get latest status for each NFT
         const latestStatusMap = new Map<string, BaseEvent>()
-
         for (const event of allEvents) {
-            // key: 唯一標識一個 NFT (合約地址 + 代幣 ID)
-            // 這樣可以確保我們能正確追蹤每個 NFT 的最新狀態
             const key = `${event.contractAddress}-${event.tokenId}`
-
-            // 因為我們已經是由新到舊排序，所以如果 Map 裡面還沒有這個 Key，
-            // 代表這個 event 就是該 NFT 的「最新狀態」
             if (!latestStatusMap.has(key)) {
                 latestStatusMap.set(key, event)
             }
         }
 
-        // 過濾出最新狀態是 "ItemListed" 的事件
-        // 為何要.map? 因為 TypeScript 無法自動推斷過濾後的類型，所以我們需要手動告訴它這些事件都是 ItemListedEvent
-        const active = Array.from(latestStatusMap.values())
+        // Filter to only active listings
+        let active = Array.from(latestStatusMap.values())
             .filter(event => event.__typename === "ItemListed")
             .map(event => event as ItemListedEvent)
 
+        // Apply price filter
+        if (filters.minPrice !== "") {
+            const minPriceUSDC = parseFloat(filters.minPrice)
+            if (!isNaN(minPriceUSDC)) {
+                active = active.filter(nft => toUSDC(nft.price) >= minPriceUSDC)
+            }
+        }
+        if (filters.maxPrice !== "") {
+            const maxPriceUSDC = parseFloat(filters.maxPrice)
+            if (!isNaN(maxPriceUSDC)) {
+                active = active.filter(nft => toUSDC(nft.price) <= maxPriceUSDC)
+            }
+        }
+
+        // Apply sorting
+        switch (sortBy) {
+            case "price_asc":
+                active.sort((a, b) => toUSDC(a.price) - toUSDC(b.price))
+                break
+            case "price_desc":
+                active.sort((a, b) => toUSDC(b.price) - toUSDC(a.price))
+                break
+            case "recent":
+            default:
+                // Already sorted by block order from the map iteration
+                break
+        }
+
         return active
-    }, [data])
+    }, [data, sortBy, filters])
 
     return (
         <div className="w-full">
@@ -181,10 +318,7 @@ export default function RecentlyListedNFTs() {
 
                 {/* 右側：動作區 (Faucet + List) */}
                 <div className="flex flex-wrap items-center gap-3">
-                    {/* Faucet 按鈕 (比較大顆，放在左邊當輔助) */}
                     <FaucetButton />
-
-                    {/* List Item 按鈕 (主要動作，放在最右邊) */}
                     <Link
                         href="/list-nft"
                         className="
@@ -194,7 +328,6 @@ export default function RecentlyListedNFTs() {
                             transition-all duration-300 shadow-lg hover:shadow-purple-500/20
                             hover:-translate-y-0.5 active:translate-y-0 h-full
                         "
-                        // 稍微加高 py-3 讓高度跟 Faucet 按鈕接近一點
                     >
                         <span className="text-xl leading-none text-purple-500 group-hover:text-purple-400 transition-colors">
                             +
@@ -202,6 +335,22 @@ export default function RecentlyListedNFTs() {
                         <span>List Item</span>
                     </Link>
                 </div>
+            </div>
+
+            {/* Filter & Sort Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <p className="text-sm text-zinc-500">
+                    {activeListings.length} {activeListings.length === 1 ? "item" : "items"} listed
+                    {hasActiveFilters && " (filtered)"}
+                </p>
+                <FilterBar
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    filters={filters}
+                    onFilterChange={setFilters}
+                    onClearFilters={handleClearFilters}
+                    hasActiveFilters={hasActiveFilters}
+                />
             </div>
 
             {/* Loading & Error States */}
@@ -217,13 +366,24 @@ export default function RecentlyListedNFTs() {
                 </div>
             ) : activeListings.length === 0 ? (
                 <div className="text-center py-16 border border-dashed border-zinc-800 rounded-2xl">
-                    <p className="text-zinc-500 text-lg mb-4">No NFTs listed yet.</p>
-                    <Link
-                        href="/list-nft"
-                        className="text-purple-400 hover:text-purple-300 underline underline-offset-4"
-                    >
-                        Be the first to list one!
-                    </Link>
+                    <p className="text-zinc-500 text-lg mb-4">
+                        {hasActiveFilters ? "No NFTs match your filters." : "No NFTs listed yet."}
+                    </p>
+                    {hasActiveFilters ? (
+                        <button
+                            onClick={handleClearFilters}
+                            className="text-purple-400 hover:text-purple-300 underline underline-offset-4"
+                        >
+                            Clear filters
+                        </button>
+                    ) : (
+                        <Link
+                            href="/list-nft"
+                            className="text-purple-400 hover:text-purple-300 underline underline-offset-4"
+                        >
+                            Be the first to list one!
+                        </Link>
+                    )}
                 </div>
             ) : (
                 // Grid System
@@ -242,3 +402,4 @@ export default function RecentlyListedNFTs() {
         </div>
     )
 }
+
