@@ -61,3 +61,33 @@ body {
         0 0 20px oklch(0.714 0.203 305.504),
         0 0 30px oklch(0.714 0.203 305.504);
 }
+
+/* ============== AI Chatbot Animations ============== */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+}
+
