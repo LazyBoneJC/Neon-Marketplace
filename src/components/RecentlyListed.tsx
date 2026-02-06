@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useRef, useEffect } from "react"
 import NFTBox from "./NFTBox"
 import Link from "next/link"
 import FaucetButton from "./FaucetButton"
@@ -101,6 +101,37 @@ function FilterBar({
 }) {
     const [localFilters, setLocalFilters] = useState(filters)
     const [isFilterOpen, setIsFilterOpen] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Sync localFilters when parent filters change (e.g., cleared externally)
+    useEffect(() => {
+        setLocalFilters(filters)
+    }, [filters])
+
+    // Close dropdown on click outside or Esc key
+    useEffect(() => {
+        if (!isFilterOpen) return
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setIsFilterOpen(false)
+            }
+        }
+
+        const handleEscKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setIsFilterOpen(false)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside)
+        document.addEventListener("keydown", handleEscKey)
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+            document.removeEventListener("keydown", handleEscKey)
+        }
+    }, [isFilterOpen])
 
     const handleApply = () => {
         onFilterChange(localFilters)
@@ -119,6 +150,7 @@ function FilterBar({
             <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value as SortOption)}
+                aria-label="Sort NFT listings"
                 className="
                     px-4 py-2 rounded-lg
                     bg-zinc-800 border border-zinc-700
@@ -133,9 +165,11 @@ function FilterBar({
             </select>
 
             {/* Filter Button */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
                 <button
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-label="Filter by price range"
+                    aria-expanded={isFilterOpen}
                     className={`
                         px-4 py-2 rounded-lg border text-sm
                         transition-all duration-200
@@ -168,8 +202,11 @@ function FilterBar({
                             <input
                                 type="number"
                                 placeholder="Min"
+                                min="0"
+                                step="0.01"
                                 value={localFilters.minPrice}
                                 onChange={(e) => setLocalFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                                aria-label="Minimum price in USDC"
                                 className="
                                     w-full min-w-0 px-3 py-2 rounded-lg
                                     bg-zinc-800 border border-zinc-700
@@ -181,8 +218,11 @@ function FilterBar({
                             <input
                                 type="number"
                                 placeholder="Max"
+                                min="0"
+                                step="0.01"
                                 value={localFilters.maxPrice}
                                 onChange={(e) => setLocalFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                                aria-label="Maximum price in USDC"
                                 className="
                                     w-full min-w-0 px-3 py-2 rounded-lg
                                     bg-zinc-800 border border-zinc-700
