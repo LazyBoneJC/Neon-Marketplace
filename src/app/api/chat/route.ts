@@ -116,6 +116,26 @@ const MOCK_RESPONSES: Record<string, Record<Language, string[]>> = {
             "That's outside my current capabilities 😅 I mainly help with NFT trading tasks. Would you like to check market prices instead?",
         ],
     },
+    wallet_required: {
+        zh: [
+            "⚠️ 請先連接你的錢包！\n\n要上架 NFT 需要連接錢包來驗證你的身份并簽署交易。請點擊右上角的「連接錢包」按鈕。",
+            "看起來你還沒有連接錢包 👛\n\n上架 NFT 需要錢包連接來驗證你的資產。請先點擊右上角的連接按鈕！",
+        ],
+        en: [
+            "⚠️ Please connect your wallet first!\n\nTo list an NFT, you need to connect your wallet to verify ownership and sign the transaction. Click the 'Connect Wallet' button in the top right.",
+            "Hmm, looks like your wallet isn't connected 👛\n\nListing an NFT requires wallet connection to verify your assets. Please click the connect button in the top right!",
+        ],
+    },
+    address_required: {
+        zh: [
+            "要進行安全檢查，我需要一個地址！\n\n請提供你想檢查的錢包地址，或先連接你的錢包，我就能幫你檢查你自己的地址。\n\n範例：「檢查 0x1234...5678」",
+            "我需要知道要檢查哪個地址 ❓\n\n你可以：\n• 提供具體地址（如：0x...）\n• 或先連接錢包，我就能檢查你自己的地址",
+        ],
+        en: [
+            "I need an address to check!\n\nPlease provide the wallet address you want to check, or connect your wallet first so I can check your own address.\n\nExample: \"Check 0x1234...5678\"",
+            "Which address should I check? ❓\n\n• You can provide an address (like 0x...)\n• Or connect your wallet first, and I can check your own address",
+        ],
+    },
 }
 
 // Detect language from user message
@@ -215,7 +235,7 @@ function parseFunctionCall(message: string, _response: string): FunctionCallResu
 // ============== Main Handler ==============
 export async function POST(request: Request) {
     try {
-        const { message, history, userContext: _userContext }: ChatRequest = await request.json()
+        const { message, history, userContext }: ChatRequest = await request.json()
         // _userContext will be used in Phase 3 for wallet-aware prompts
 
         if (!message?.trim()) {
@@ -230,6 +250,76 @@ export async function POST(request: Request) {
             const intent = detectIntent(message)
             const lang = detectLanguage(message)
             let response: string
+            const hasWallet = Boolean(userContext?.address)
+
+            // Check wallet connection for actions that require it
+            if (intent === "list_intent" && !hasWallet) {
+                response = getRandomResponse(MOCK_RESPONSES.wallet_required[lang])
+                return NextResponse.json({
+                    success: true,
+                    response,
+                    isMock: true,
+                })
+            }
+
+            // For risk check without specific address and no wallet
+            if (intent === "risk_check") {
+                const addressMatch = message.match(/0x[a-fA-F0-9]{40}/)
+                const hasAddressInMessage = Boolean(addressMatch)
+                
+                if (!hasAddressInMessage && !hasWallet) {
+                    response = getRandomResponse(MOCK_RESPONSES.address_required[lang])
+                    return NextResponse.json({
+                        success: true,
+                        response,
+                        isMock: true,
+                    })
+                }
+
+                // Use provided address or connected wallet address
+                const addressToCheck = addressMatch?.[0] || userContext?.address
+
+                if (addressToCheck) {
+                    try {
+                        // Call real Compliance API
+                        const baseUrl = process.env.VERCEL_URL 
+                            ? `https://${process.env.VERCEL_URL}` 
+                            : "http://localhost:3000"
+                        
+                        const complianceResponse = await fetch(`${baseUrl}/api/compliance`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ address: addressToCheck }),
+                        })
+
+                        const complianceData = await complianceResponse.json()
+
+                        if (complianceData.success) {
+                            if (complianceData.isApproved) {
+                                response = lang === "zh" 
+                                    ? `✅ 地址安全檢查完成\n\n**${addressToCheck.slice(0, 6)}...${addressToCheck.slice(-4)}** 未被標記為高風險，可以安全進行交易。`
+                                    : `✅ Address security check complete\n\n**${addressToCheck.slice(0, 6)}...${addressToCheck.slice(-4)}** is not flagged as high-risk. Safe to proceed.`
+                            } else {
+                                response = lang === "zh"
+                                    ? `🚫 風險警告！\n\n**${addressToCheck.slice(0, 6)}...${addressToCheck.slice(-4)}** 被標記為高風險地址。\n\n⚠️ 強烈建議不要與此地址進行交易。`
+                                    : `🚫 Risk Warning!\n\n**${addressToCheck.slice(0, 6)}...${addressToCheck.slice(-4)}** is flagged as HIGH RISK.\n\n⚠️ We strongly advise against transacting with this address.`
+                            }
+                        } else {
+                            // API error, use fallback
+                            response = getRandomResponse(MOCK_RESPONSES.risk_check[lang])
+                        }
+                    } catch {
+                        // Network error, use fallback
+                        response = getRandomResponse(MOCK_RESPONSES.risk_check[lang])
+                    }
+
+                    return NextResponse.json({
+                        success: true,
+                        response,
+                        isMock: true,
+                    })
+                }
+            }
 
             // Special handling for market queries - try to get real data
             if (intent === "market_query") {
@@ -237,11 +327,11 @@ export async function POST(request: Request) {
                     // Try Rindexer first, fallback to mock
                     const stats = await getMarketStats()
                     if (stats && stats.totalSales > 0) {
-                        response = formatMarketStatsForAI(stats)
+                        response = formatMarketStatsForAI(stats, lang)
                     } else {
                         // Use mock stats if no real data
                         const mockStats = getMockMarketStats()
-                        response = formatMarketStatsForAI(mockStats)
+                        response = formatMarketStatsForAI(mockStats, lang)
                     }
                 } catch {
                     // Fallback to predefined mock responses

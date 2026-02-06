@@ -99,6 +99,13 @@ async function executeQuery<T>(
         }
 
         const result = await response.json()
+        
+        // Check for GraphQL errors
+        if (result.errors) {
+            console.error("GraphQL errors:", result.errors)
+            return null
+        }
+        
         return result.data as T
     } catch (error) {
         console.error("Rindexer connection error:", error)
@@ -138,9 +145,6 @@ export async function getMarketStats(): Promise<MarketStats | null> {
         return null
     }
 
-    // Convert prices from raw USDC (6 decimals) to human readable
-    const pricesUSDC = sales.map((s) => Number(s.price) / 1_000_000)
-
     // Calculate 24h sales (approximate by taking recent ones)
     const now = Date.now()
     const oneDayAgo = now - 24 * 60 * 60 * 1000
@@ -148,6 +152,11 @@ export async function getMarketStats(): Promise<MarketStats | null> {
         const timestamp = Number(s.blockTimestamp) * 1000
         return timestamp > oneDayAgo
     })
+
+    // Use 24h sales for all calculations for consistency
+    // If no 24h sales, fall back to all sales
+    const relevantSales = sales24h.length > 0 ? sales24h : sales
+    const pricesUSDC = relevantSales.map((s) => Number(s.price) / 1_000_000)
 
     const volume24h = sales24h.reduce((sum, s) => sum + Number(s.price) / 1_000_000, 0)
     const avgPrice = pricesUSDC.reduce((a, b) => a + b, 0) / pricesUSDC.length
@@ -163,9 +172,29 @@ export async function getMarketStats(): Promise<MarketStats | null> {
 }
 
 /**
- * Format market stats for AI response
+ * Format market stats for AI response (bilingual support)
  */
-export function formatMarketStatsForAI(stats: MarketStats): string {
+export function formatMarketStatsForAI(stats: MarketStats, lang: "zh" | "en" = "zh"): string {
+    const recentSalesList = stats.recentSales
+        .map((s, i) => {
+            const price = (Number(s.price) / 1_000_000).toFixed(2)
+            return `${i + 1}. Token #${s.tokenId} - ${price} USDC`
+        })
+        .join("\n")
+
+    if (lang === "en") {
+        return `
+Market Analysis:
+• 24h Volume: ${stats.totalVolume24h} USDC
+• Average Price: ${stats.avgPrice} USDC
+• Floor Price: ${stats.floorPrice} USDC
+• 24h Sales: ${stats.totalSales} transactions
+
+Recent Sales:
+${recentSalesList}
+        `.trim()
+    }
+
     return `
 市場數據分析：
 • 24小時交易量：${stats.totalVolume24h} USDC
@@ -174,12 +203,7 @@ export function formatMarketStatsForAI(stats: MarketStats): string {
 • 24小時成交筆數：${stats.totalSales} 筆
 
 近期成交記錄：
-${stats.recentSales
-    .map((s, i) => {
-        const price = (Number(s.price) / 1_000_000).toFixed(2)
-        return `${i + 1}. Token #${s.tokenId} - ${price} USDC`
-    })
-    .join("\n")}
+${recentSalesList}
     `.trim()
 }
 

@@ -21,6 +21,8 @@ interface UseChatbotOptions {
     systemContext?: string
     /** Enable local storage persistence */
     persist?: boolean
+    /** User's connected wallet address */
+    userAddress?: string
 }
 
 interface UseChatbotReturn {
@@ -65,7 +67,7 @@ function saveMessagesToStorage(messages: ChatMessage[]) {
 
 // ============== Hook ==============
 export function useChatbot(options: UseChatbotOptions = {}): UseChatbotReturn {
-    const { persist = false } = options
+    const { persist = false, userAddress } = options
 
     const [messages, setMessages] = useState<ChatMessage[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -125,6 +127,10 @@ export function useChatbot(options: UseChatbotOptions = {}): UseChatbotReturn {
                             role: m.role,
                             content: m.content,
                         })),
+                        // Send wallet address for validation
+                        userContext: {
+                            address: userAddress,
+                        },
                     }),
                 })
 

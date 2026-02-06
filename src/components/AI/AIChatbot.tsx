@@ -90,7 +90,7 @@ function MessageBubble({
                                 </strong>
                             ) : (
                                 // Handle long addresses/hashes by adding word break
-                                <span key={i} className="break-all">{part}</span>
+                                <span key={i}>{part}</span>
                             )
                         )}
                     </p>
@@ -316,6 +316,7 @@ export default function AIChatbot() {
 
     const { messages, isLoading, error, sendMessage, clearHistory } = useChatbot({
         persist: true,
+        userAddress: address, // Pass wallet address for action validation
     })
 
     // Handle action confirmation (e.g., list NFT)
@@ -328,10 +329,11 @@ export default function AIChatbot() {
         }
     }, [router])
 
-    // Handle action cancellation
+    // Handle action cancellation with bilingual support
     const handleActionCancel = useCallback(() => {
-        sendMessage("取消操作")
-    }, [sendMessage])
+        const cancelMessage = lang === "zh" ? "取消操作" : "Cancel action"
+        sendMessage(cancelMessage)
+    }, [sendMessage, lang])
 
     // Scroll to bottom when new messages arrive
     useEffect(() => {

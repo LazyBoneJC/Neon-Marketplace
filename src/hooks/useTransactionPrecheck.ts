@@ -33,6 +33,10 @@ export function useTransactionPrecheck(options: UsePrecheckOptions = {}) {
                     body: JSON.stringify({ address }),
                 })
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`)
+                }
+
                 const data = await response.json()
 
                 let riskLevel: PrecheckResult["addressRisk"] = "unknown"

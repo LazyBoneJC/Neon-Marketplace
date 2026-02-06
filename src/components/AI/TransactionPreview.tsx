@@ -24,7 +24,7 @@ export default function TransactionPreview({
     const [hasPrecheck, setHasPrecheck] = useState(false)
     const { isChecking, result, checkAddress } = useTransactionPrecheck()
 
-    // Run precheck on mount for list_nft actions
+    // Trigger precheck when user clicks the button
     const handlePrecheck = async () => {
         // For list_nft, we'd check the marketplace contract
         // For now, simulate a check
